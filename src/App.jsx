@@ -336,21 +336,180 @@ function LoginPage({ setUser }) {
     </div>
   );
 }
+function FileTable({ files, onDelete, onRename }) {
+  const [selected, setSelected] = useState([]);
+  const [search, setSearch] = useState("");
+  const [filterExt, setFilterExt] = useState("all");
+  const [renameIdx, setRenameIdx] = useState(null);
+  const [newName, setNewName] = useState("");
+  const [menuOpenIdx, setMenuOpenIdx] = useState(null);
 
+  const getExt = (name) => name.split('.').pop().toUpperCase();
+  const formatSize = (size) => size ? (size / (1024 * 1024)).toFixed(2) + " MB" : "-";
+  const shortName = (name, max = 18) => name.length > max ? name.slice(0, max) + "..." : name;
+  function timeAgo(dateString) {
+    if (!dateString) return "";
+    const now = new Date();
+    const date = new Date(dateString);
+    const diff = Math.floor((now - date) / 1000);
+    if (diff < 10) return "just now";
+    if (diff < 60) return `${diff} seconds ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)} mins ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} hrs ago`;
+    if (diff < 2592000) return `${Math.floor(diff / 86400)} days ago`;
+    return date.toLocaleDateString("en-US");
+  }
+
+  const filteredFiles = files.filter(f => {
+    const matchesSearch = f.name.toLowerCase().includes(search.toLowerCase());
+    const matchesExt = filterExt === "all" || getExt(f.name) === filterExt;
+    return matchesSearch && matchesExt;
+  });
+
+  const allExts = Array.from(new Set(files.map(f => getExt(f.name))));
+
+  const toggleSelect = (idx) => {
+    setSelected(selected.includes(idx) ? selected.filter(i => i !== idx) : [...selected, idx]);
+  };
+
+  const handleSelectAll = () => {
+    if (selected.length === filteredFiles.length) {
+      setSelected([]);
+    } else {
+      setSelected(filteredFiles.map(f => files.findIndex(ff => ff.name === f.name)));
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    selected.forEach(idx => onDelete(idx));
+    setSelected([]);
+  };
+
+  const handleRename = async (idx) => {
+    await onRename(idx, newName);
+    setRenameIdx(null);
+    setNewName("");
+  };
+
+  return (
+    <div className="file-table-wrapper">
+      <div className="file-table-controls">
+        <input
+          type="text"
+          placeholder="Search files..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="file-table-search"
+        />
+        <select
+          value={filterExt}
+          onChange={e => setFilterExt(e.target.value)}
+          className="file-table-filter"
+        >
+          <option value="all">All types</option>
+          {allExts.map(ext => (
+            <option key={ext} value={ext}>{ext}</option>
+          ))}
+        </select>
+        {selected.length > 0 && (
+          <button className="delete-selected-btn" onClick={handleDeleteSelected}>
+            Delete Selected
+          </button>
+        )}
+      </div>
+     <div className="file-table-scroll">
+  <table className="file-table">
+    
+          <thead>
+            <tr>
+              <th className="file-table-checkbox">
+                <input
+                  type="checkbox"
+                  checked={selected.length === filteredFiles.length && filteredFiles.length > 0}
+                  onChange={handleSelectAll}
+                  title="Select All"
+                />
+              </th>
+              <th className="file-table-name">File Name</th>
+              <th className="file-table-date">Uploaded</th>
+              <th className="file-table-ext">Format</th>
+              <th className="file-table-size">Size</th>
+              <th className="file-table-actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredFiles.length === 0 && (
+              <tr>
+                <td colSpan={6} className="file-table-empty">No files found.</td>
+              </tr>
+            )}
+            {filteredFiles.map((file, idx) => {
+              const fileIdx = files.findIndex(f => f.name === file.name);
+              return (
+                <tr key={fileIdx}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(fileIdx)}
+                      onChange={() => toggleSelect(fileIdx)}
+                    />
+                  </td>
+                  <td>
+                    {renameIdx === fileIdx ? (
+                      <form
+                        onSubmit={e => { e.preventDefault(); handleRename(fileIdx); }}
+                        className="file-table-rename-form"
+                      >
+                        <input
+                          value={newName}
+                          onChange={e => setNewName(e.target.value)}
+                          autoFocus
+                          className="rename-input"
+                        />
+                        <button type="submit" className="file-table-rename-btn">✓</button>
+                      </form>
+                    ) : (
+                      <a href={file.url} target="_blank" rel="noopener noreferrer" className="file-table-link">
+                        {shortName(file.name)}
+                      </a>
+                    )}
+                  </td>
+                  <td className="file-table-date">{timeAgo(file.updated_at)}</td>
+                  <td className="file-table-ext">{getExt(file.name)}</td>
+                  <td className="file-table-size">{formatSize(file.size)}</td>
+                  <td style={{ position: "relative" }}>
+                    <button
+                      className="ellipsis-btn2"
+                      onClick={() => setMenuOpenIdx(menuOpenIdx === fileIdx ? null : fileIdx)}
+                      title="More"
+                    >⋮</button>
+                    {menuOpenIdx === fileIdx && (
+                      <div className="menu-dropdown">
+                        <button onClick={() => { setRenameIdx(fileIdx); setNewName(file.name); setMenuOpenIdx(null); }}>Rename</button>
+                        <button onClick={() => { onDelete(fileIdx); setMenuOpenIdx(null); }}>Delete</button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 function MainPage({ user, onLogout }) {
   const [showUpload, setShowUpload] = useState(false);
   const [files, setFiles] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [usedSpace, setUsedSpace] = useState(0);
-  
-  const totalSpace = 1024; 
 
+  const totalSpace = 1024;
 
   const fetchFilesAndUsage = async () => {
     const { data, error } = await supabase.storage.from("uploads").list("uploads", { limit: 1000 });
     if (error || !data) return;
-
-    // Only files (not folders) have a size property
     const allFiles = data.filter(item => item.metadata && typeof item.metadata.size === "number");
     setFiles(
       allFiles.map(f => ({
@@ -360,35 +519,23 @@ function MainPage({ user, onLogout }) {
         updated_at: f.updated_at || f.created_at || null
       }))
     );
-
-    const totalUsed = allFiles.reduce((sum, f) => sum + (f.metadata.size || 0), 0) / (1024 * 1024); // bytes to MB
+    const totalUsed = allFiles.reduce((sum, f) => sum + (f.metadata.size || 0), 0) / (1024 * 1024);
     setUsedSpace(totalUsed);
   };
 
-  useEffect(() => {
-    fetchFilesAndUsage();
+  useEffect(() => { fetchFilesAndUsage(); }, []);
 
-  }, []);
-
-  const handleUpload = (fileObj) => {
-    fetchFilesAndUsage();
-  };
-
-  const handleDelete = (idx) => {
-    fetchFilesAndUsage();
-  };
-
-  const handleRename = (idx, newName) => {
-    fetchFilesAndUsage();
-  };
+  const handleUpload = () => fetchFilesAndUsage();
+  const handleDelete = (idx) => fetchFilesAndUsage();
+  const handleRename = (idx, newName) => fetchFilesAndUsage();
 
   return (
     <div className="main-page">
       <div style={{ position: "relative" }}>
         {menuOpen && (
-          <div style={{ position: "absolute", left: 290, top: 32, background: "white", border: "1px solid #ccc", borderRadius: 6, boxShadow: "0 2px 8px rgba(0,0,0,0.08)", zIndex: 10 }}>
+          <div className="logout-menu">
             <button
-              style={{ padding: "8px 16px", width: "100%", background: "none", border: "none", textAlign: "center", cursor: "pointer" }}
+              className="logout-btn"
               onClick={() => { setMenuOpen(false); onLogout(); }}
             >
               Logout
@@ -403,17 +550,14 @@ function MainPage({ user, onLogout }) {
       >
         &#8942;
       </button>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h2 className="welcome" style={{ marginBottom: 0 }}>
+      <div className="main-header">
+        <h2 className="welcome">
           Welcome, <span className="username">{user.name}!</span>
           <div className="welcome-underline"></div>
         </h2>
       </div>
-
-      {/* Storage Display Component */}
       <StorageDisplay totalSpace={totalSpace} usedSpace={usedSpace} />
-
-      <FileList files={files} onDelete={handleDelete} onRename={handleRename} />
+      <FileTable files={files} onDelete={handleDelete} onRename={handleRename} />
       <button className="fab" onClick={() => setShowUpload(true)}>+</button>
       {showUpload && (
         <FileUpload
@@ -427,7 +571,6 @@ function MainPage({ user, onLogout }) {
 
 function App() {
   const [user, setUser] = useState(() => {
-    // Try to load user from localStorage
     const saved = localStorage.getItem("cloudmanager_user");
     return saved ? JSON.parse(saved) : null;
   });
