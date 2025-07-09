@@ -1,6 +1,7 @@
-# React + Vite
+# Cloud Manager (React + Vite)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+check it out:
+https://cloud-manager-git-main-ehsans-projects-38f284a9.vercel.app/
 
 Currently, two official plugins are available:
 
