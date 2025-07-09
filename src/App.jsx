@@ -2,9 +2,7 @@ import { useState, useEffect } from "react";
 import './App.css';
 import { supabase } from "./supabaseClient";
 
-// New StorageDisplay Component
 function StorageDisplay({ totalSpace, usedSpace }) {
-  // totalSpace و usedSpace بر حسب مگابایت هستند
   const usedPercentage = (usedSpace / totalSpace) * 100;
   const usedSpaceMB = usedSpace.toLocaleString(undefined, { maximumFractionDigits: 0 });
   const totalSpaceMB = totalSpace.toLocaleString(undefined, { maximumFractionDigits: 0 });
@@ -109,17 +107,27 @@ function FileList({ files, onDelete, onRename }) {
   const getExt = (name) => name.split('.').pop().toUpperCase();
   const isImage = (name) => /\.(jpe?g|png|gif|bmp|webp)$/i.test(name);
 
-  // حذف واقعی فایل از Supabase
+  function timeAgo(dateString) {
+    if (!dateString) return "";
+    const now = new Date();
+    const date = new Date(dateString);
+    const diff = Math.floor((now - date) / 1000);
+    if (diff < 10) return "just now";
+    if (diff < 60) return `${diff} seconds ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)} mins ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} hrs ago`;
+    if (diff < 2592000) return `${Math.floor(diff / 86400)} days ago`;
+    return date.toLocaleDateString("en-US");
+  }
+
   const handleDelete = async (idx) => {
     const file = files[idx];
     if (!file) return;
-    // حذف فایل از storage
     const filePath = `uploads/${file.name}`;
     await supabase.storage.from("uploads").remove([filePath]);
     onDelete(idx);
   };
 
-  // رینیم واقعی فایل در Supabase
   const handleRename = async (idx, newName) => {
     const file = files[idx];
     if (!file || !newName || file.name === newName) return;
@@ -133,10 +141,12 @@ function FileList({ files, onDelete, onRename }) {
   };
 
   return (
-    <div>
+    <div className="listdiv">
       <h2 className="yourfilelist">your files list:</h2>
       {files.length === 0 ? (
-        <div className="empty-list" style={{boxShadow: 'none', background: 'none', padding: 0, margin: '32px 0', borderRadius: 0, color: '#888', fontSize: 15}}>your files list is empty!</div>
+        <div className="empty-list">
+          your files list is empty!
+        </div>
       ) : (
         <ul className="file-list">
           {files.map((file, idx) => (
@@ -156,18 +166,18 @@ function FileList({ files, onDelete, onRename }) {
                       await handleRename(idx, newName);
                       setRenameIdx(null);
                     }}
-                    style={{ display: 'flex', alignItems: 'center' }}
+                   
                   >
                     <input
                       value={newName}
                       onChange={e => setNewName(e.target.value)}
                       autoFocus
                       className="rename-input"
-                      style={{ marginRight: 4 }}
+                     
                     />
                     <button
                       type="submit"
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#4caf50', fontSize: 20, padding: 0 }}
+                     
                       title="Rename"
                     >
                       ✓
@@ -177,7 +187,14 @@ function FileList({ files, onDelete, onRename }) {
                   <a href={file.url} target="_blank" rel="noopener noreferrer">{file.name}</a>
                 )}
               </div>
-              <div className="file-ext">{getExt(file.name)}</div>
+              <div className="file-ext">
+                {getExt(file.name)}
+                {file.updated_at && (
+                  <span className="file-date" style={{ color: '#888', fontSize: 12, marginLeft: 17 }}>
+                    {timeAgo(file.updated_at)}
+                  </span>
+                )}
+              </div>
               <div className="file-menu">
                 <button
                   className="ellipsis-btn2"
@@ -203,6 +220,8 @@ function LoginPage({ setUser }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [signupMode, setSignupMode] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(false);
 
   const handleEmailLogin = async (e) => {
     e.preventDefault();
@@ -219,17 +238,32 @@ function LoginPage({ setUser }) {
     }
 
     const user = data.user;
-
     const userName =
       user.user_metadata?.full_name ||
       user.user_metadata?.name ||
       user.email.split("@")[0];
-
     setUser({ ...user, name: userName });
   };
 
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+    setLoginError("");
+    setSignupSuccess(false);
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    if (error) {
+      setLoginError("Sign up failed: " + error.message);
+      return;
+    }
+    setSignupSuccess(true);
+    setSignupMode(false);
+    setLoginError("");
+  };
+
   return (
-    <div className="LoginForms">
+    <div className="">
       <div className="top-half-circle"></div>
       <div style={{ marginBottom: 20, textAlign: "center" }}>
         <div className="logo">
@@ -237,15 +271,23 @@ function LoginPage({ setUser }) {
           <p>a great experience of cloud management</p>
         </div>
         {!loginType && (
-          <button
-            className="EmailLoginButton"
-            onClick={() => setLoginType("email")}
-          >
-            Login with Email
-          </button>
+          <>
+            <button
+              className="EmailLoginButton"
+              onClick={() => { setLoginType("email"); setSignupMode(false); }}
+            >
+              Login
+            </button>
+            <button
+              className="SignUpButton"
+              onClick={() => { setLoginType("email"); setSignupMode(true); }}
+            >
+              Sign Up
+            </button>
+          </>
         )}
       </div>
-      {loginType === "email" && (
+      {loginType === "email" && !signupMode && (
         <form className="EmailSignUp" onSubmit={handleEmailLogin}>
           {loginError && <div style={{color: "#db5d7d", marginBottom: 10}}>{loginError}</div>}
           <input
@@ -262,8 +304,32 @@ function LoginPage({ setUser }) {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <div className="SignUp">
+          <div className="Login">
             <button type="submit">Login</button>
+          </div>
+        </form>
+      )}
+      {loginType === "email" && signupMode && (
+        <form className="EmailSignUp" onSubmit={handleSignUp}>
+          {loginError && <div style={{color: "#db5d7d", marginBottom: 10}}>{loginError}</div>}
+          {signupSuccess && <div style={{color: "#4caf50", marginBottom: 10}}>Sign up successful! Please check your email to verify your account.</div>}
+          <input
+            placeholder="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <input
+            placeholder="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <div>
+            <button  className="SignUp" type="submit">Sign Up</button>
+            <button className="backtologin" type="button"  onClick={() => { setSignupMode(false); setLoginError(""); setSignupSuccess(false); }}>Back to Login</button>
           </div>
         </form>
       )}
@@ -284,15 +350,17 @@ function MainPage({ user, onLogout }) {
     const { data, error } = await supabase.storage.from("uploads").list("uploads", { limit: 1000 });
     if (error || !data) return;
 
+    // Only files (not folders) have a size property
     const allFiles = data.filter(item => item.metadata && typeof item.metadata.size === "number");
     setFiles(
       allFiles.map(f => ({
         name: f.name,
         url: supabase.storage.from("uploads").getPublicUrl(`uploads/${f.name}`).data.publicUrl,
-        size: f.metadata.size
+        size: f.metadata.size,
+        updated_at: f.updated_at || f.created_at || null
       }))
     );
- 
+
     const totalUsed = allFiles.reduce((sum, f) => sum + (f.metadata.size || 0), 0) / (1024 * 1024); // bytes to MB
     setUsedSpace(totalUsed);
   };
@@ -318,9 +386,9 @@ function MainPage({ user, onLogout }) {
     <div className="main-page">
       <div style={{ position: "relative" }}>
         {menuOpen && (
-          <div style={{ position: "absolute", left: 230, top: 32, background: "white", border: "1px solid #ccc", borderRadius: 6, boxShadow: "0 2px 8px rgba(0,0,0,0.08)", zIndex: 10 }}>
+          <div style={{ position: "absolute", left: 290, top: 32, background: "white", border: "1px solid #ccc", borderRadius: 6, boxShadow: "0 2px 8px rgba(0,0,0,0.08)", zIndex: 10 }}>
             <button
-              style={{ padding: "8px 16px", width: "100%", background: "none", border: "none", textAlign: "left", cursor: "pointer" }}
+              style={{ padding: "8px 16px", width: "100%", background: "none", border: "none", textAlign: "center", cursor: "pointer" }}
               onClick={() => { setMenuOpen(false); onLogout(); }}
             >
               Logout
