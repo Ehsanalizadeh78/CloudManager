@@ -520,8 +520,31 @@ function MainPage({ user, onLogout }) {
   useEffect(() => { fetchFilesAndUsage(); }, []);
 
   const handleUpload = () => fetchFilesAndUsage();
-  const handleDelete = (idx) => fetchFilesAndUsage();
-  const handleRename = (idx, newName) => fetchFilesAndUsage();
+  const handleDelete = async (idx) => {
+  const file = files[idx];
+  if (!file) return;
+  const filePath = `uploads/${file.name}`;
+  await supabase.storage.from("uploads").remove([filePath]);
+  fetchFilesAndUsage();
+};
+  const handleRename = async (idx, newName) => {
+    const file = files[idx];
+    if (!file || !newName || file.name === newName) return;
+    const oldPath = `uploads/${file.name}`;
+    const newPath = `uploads/${newName}`;
+    
+    if (files.some(f => f.name === newName)) {
+      alert("A file with this name already exists.");
+      return;
+    }
+   const { error: copyError } = await supabase.storage.from("uploads").copy(oldPath, newPath);
+    if (copyError) {
+      alert("Rename failed: " + copyError.message);
+      return;
+    }
+   await supabase.storage.from("uploads").remove([oldPath]);
+    fetchFilesAndUsage();
+  };
 
   return (
     <div className="main-page">
@@ -561,7 +584,6 @@ function MainPage({ user, onLogout }) {
     </div>
   );
 }
-
 function App() {
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem("cloudmanager_user");
