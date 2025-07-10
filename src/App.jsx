@@ -4,26 +4,21 @@ import { supabase } from "./supabaseClient";
 
 function StorageDisplay({ totalSpace, usedSpace }) {
   const usedPercentage = (usedSpace / totalSpace) * 100;
+  const percentage = usedPercentage + 3;
   const usedSpaceMB = usedSpace.toLocaleString(undefined, { maximumFractionDigits: 0 });
   const totalSpaceMB = totalSpace.toLocaleString(undefined, { maximumFractionDigits: 0 });
   const freeSpaceMB = (totalSpace - usedSpace).toLocaleString(undefined, { maximumFractionDigits: 0 });
 
   return (
     <div className="storage-card">
-      <div className="global-statistics">
-        <div className="doughnut-chart">
-          <div className="circle-background"></div>
-          <div
-            className="circle-progress"
-            style={{
-              background: `conic-gradient(#5a9bff ${usedPercentage}%, #e0e0e0 ${usedPercentage}%)`,
-            }}
-          ></div>
-          <div className="chart-center">
-            <span className="percentage-value">{Math.round(usedPercentage)}%</span>
-            <span className="used-space-label">used space</span>
-          </div>
-        </div>
+        <div className="storage-progress-bar">
+              <div className="storage-progress-bar-fill"
+                style={{ width: `${percentage}%` }}
+              ></div>
+              </div>
+             <span className="percentage-value">{Math.round(usedPercentage)}%</span>
+             <span className="used-space-label">used space</span>
+   
         <div className="storage-details">
           <div className="storage-item">
             <div className="color-box total-space-color"></div>
@@ -41,7 +36,6 @@ function StorageDisplay({ totalSpace, usedSpace }) {
             <strong>{freeSpaceMB} MB</strong>
           </div>
         </div>
-      </div>
     </div>
   );
 }
@@ -553,7 +547,6 @@ function MainPage({ user, onLogout }) {
       <div className="main-header">
         <h2 className="welcome">
           Welcome, <span className="username">{user.name}!</span>
-          <div className="welcome-underline"></div>
         </h2>
       </div>
       <StorageDisplay totalSpace={totalSpace} usedSpace={usedSpace} />
