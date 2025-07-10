@@ -122,7 +122,7 @@ function FileList({ files, onDelete, onRename }) {
     onDelete(idx);
   };
 
-  const handleRename = async (idx, newName) => {
+const handleRename = async (idx, newName) => {
   const file = files[idx];
   if (!file || !newName || file.name === newName) return;
   const oldPath = `uploads/${file.name}`;
