@@ -123,16 +123,16 @@ function FileList({ files, onDelete, onRename }) {
   };
 
   const handleRename = async (idx, newName) => {
-    const file = files[idx];
-    if (!file || !newName || file.name === newName) return;
-    const oldPath = `uploads/${file.name}`;
-    const newPath = `uploads/${newName}`;
-    const { error: copyError } = await supabase.storage.from("uploads").copy(oldPath, newPath);
-    if (!copyError) {
-      await supabase.storage.from("uploads").remove([oldPath]);
-    }
-    onRename(idx, newName);
-  };
+  const file = files[idx];
+  if (!file || !newName || file.name === newName) return;
+  const oldPath = `uploads/${file.name}`;
+  const newPath = `uploads/${newName}`;
+  const { error: copyError } = await supabase.storage.from("uploads").copy(oldPath, newPath);
+  if (!copyError) {
+    await supabase.storage.from("uploads").remove([oldPath]);
+  }
+  fetchFilesAndUsage();
+};
 
   return (
     <div className="listdiv">
