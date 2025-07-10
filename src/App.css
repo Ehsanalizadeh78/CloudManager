@@ -52,7 +52,8 @@ body, html {
   position: relative;
   background: linear-gradient(180deg, #f26c8d4b 0%, #ffffff 60%);
   width: 400px;
-  height: 800px;
+  height: 850px;
+  max-height:1000px;
   border-radius: 30px;
   box-shadow: 0 0 50px rgba(0, 0, 0, 0);
   overflow: hidden;
