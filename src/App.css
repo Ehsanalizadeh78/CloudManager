@@ -309,16 +309,7 @@ body, html {
 .username {
   color: #db5d7d;
 }
-.welcome-underline {
-  width: 40%;
-  height: 3px;
-  display: flex;
-  background: linear-gradient(90deg, #db5d7d 0%, #6a00ff 100%);
-  border-radius: 2px;
-  margin: 10px auto 10px auto;
-  opacity: 0.7;
-  filter: blur(0px);
-}
+
 .ellipsis-btn{
   margin-left: 330px;
   display: flex;
@@ -439,6 +430,24 @@ body, html {
   max-width: 400px;
   margin-right: 24px;
 }
+.storage-progress-bar {
+  width: 140px;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 6px;
+  margin: auto 40px 8px auto;
+  overflow: hidden;
+  position: relative;
+}
+.storage-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #815ddb, #895ddb, #b95ddb, #5d65db);
+  background-size: 400% 100%;
+  border-radius: 6px;
+  transition: width 0.7s;
+  animation: gradientMove 4s linear infinite, slideRightFade 0.8s cubic-bezier(.23,1.01,.32,1) both;
+}
+
 .storage-title {
   font-size: 6px;
   color: #333;
@@ -491,7 +500,7 @@ body, html {
   }
 }
 .file-table-wrapper {
-  margin: 32px auto 0 auto;
+  margin: 22px auto 0 auto;
   max-width: 800px;
   width: 100%;
   border-radius: 22px;
@@ -527,15 +536,14 @@ body, html {
   overflow-x: auto;
   width: 350px;
   border-radius: 15px;
-  background: #fff;
+  background: #ffffff;
   box-shadow: 0 2px 20px rgba(0, 0, 0, 0.104);
 }
 .file-table {
   width: 100%;
   border-collapse: collapse;
   border-radius: 15px;
-  background: #fff; 
-}
+background: linear-gradient(0deg, #ffd8e034 0%, #ffffff 90%);}
 .file-table th,
 .file-table td {
   padding: 10px 7px;
@@ -679,5 +687,23 @@ body, html {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+@keyframes slideRightFade {
+  from {
+    opacity: 0;
+    transform: translateX(-80px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes gradientMove {
+  0% {
+    background-position: 100% 150%;
+  }
+  100% {
+    background-position: 50% 00%;
   }
 }
