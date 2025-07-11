@@ -1,3 +1,13 @@
+body, html {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: #ffffff;
+  display: flex;
+  justify-content: center; 
+  align-items: center;
+}
 .SignUpButton {
   animation: slideDownFade 0.8s cubic-bezier(.23,1.01,.32,1) both;
   width: 180px;
@@ -22,17 +32,6 @@
   animation: slideDownFade 0.8s cubic-bezier(.23,1.01,.32,1) both;
   box-shadow: 0px 0px 20px #db5d7d;
 }
-
-body, html {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  font-family: 'Inter', sans-serif;
-  background-color: #ffffff;
-  display: flex;
-  justify-content: center; 
-  align-items: center;
-}
 .top-half-circle {
   width: 100%;
   height:380px;
@@ -50,11 +49,10 @@ body, html {
 
 .app {
   position: relative;
-  background: linear-gradient(180deg, #f26c8d4b 0%, #ffffff 60%);
+  background: linear-gradient(180deg, #f26c8d58 0%, #f26c8d00 70%,#f26c8d23 100% );
   width: 400px;
   height: 850px;
   max-height:1000px;
-  border-radius: 30px;
   box-shadow: 0 0 50px rgba(0, 0, 0, 0);
   overflow: hidden;
   padding: 69px;
@@ -68,6 +66,7 @@ body, html {
 .LoginForms {
   width: 100%;
   text-align: center;
+  
 }
 .logo{
   animation: slideDownFade 2s cubic-bezier(.23,1.01,.32,1) both;
@@ -137,7 +136,6 @@ body, html {
 }
 .Login button:hover{
   background-color: #db5d7d;
-  box-shadow: 0 0 20px #db5d7d;
   animation: slideUpFade 0.7s cubic-bezier(.23,1.01,.32,1) both;
 }
 .backtologin {
@@ -518,11 +516,11 @@ body, html {
 
 
 .file-table-search {
-  padding: 6px 12px;
+  padding: 7px 7px;
   border-radius: 6px;
   border: 1px solid #ccc;
   font-size: 10px;
-  margin-left: 20px;
+  margin-left: 15px;
 }
 
 .file-table-filter {
@@ -665,8 +663,8 @@ background: linear-gradient(0deg, #ffd8e034 0%, #ffffff 90%);}
   color: #fff;
   border: none;
   border-radius: 6px;
-  padding: 1px 6px;
-  font-size: 6px;
+  padding: 3px 10px;
+  font-size: 10px;
   margin-right: 0px;
   cursor: pointer;
   transition: background 0.2s;
