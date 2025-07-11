@@ -51,12 +51,15 @@ function FileUpload({ onClose, onUpload }) {
     setErrorMsg("");
   };
 
-  const handleUpload = async () => {
+    const handleUpload = async () => {
     if (!file) return;
     setProgress(10);
     setErrorMsg("");
 
-    const filePath = `uploads/${Date.now()}_${file.name}`;
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData.user.id;
+    const filePath = `${userId}/${Date.now()}_${file.name}`;
+
     const { data, error } = await supabase.storage
       .from("uploads")
       .upload(filePath, file);
@@ -498,51 +501,76 @@ function MainPage({ user, onLogout }) {
   const [files, setFiles] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [usedSpace, setUsedSpace] = useState(0);
-
   const totalSpace = 1024;
 
   const fetchFilesAndUsage = async () => {
-    const { data, error } = await supabase.storage.from("uploads").list("uploads", { limit: 1000 });
-    if (error || !data) return;
-    const allFiles = data.filter(item => item.metadata && typeof item.metadata.size === "number");
-    setFiles(
-      allFiles.map(f => ({
+  const { data: userData } = await supabase.auth.getUser();
+  const userId = userData.user.id;
+
+  const { data, error } = await supabase.storage.from("uploads").list(userId, { limit: 1000 });
+  if (error || !data) return;
+
+  const allFiles = data.filter(item => item.metadata && typeof item.metadata.size === "number");
+
+  const filesWithSignedUrls = await Promise.all(
+    allFiles.map(async (f) => {
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+        .from("uploads")
+        .createSignedUrl(`${userId}/${f.name}`, 3600);
+      if (signedUrlError) {
+        console.error("Error getting signed URL:", signedUrlError);
+        return null;
+      }
+      return {
         name: f.name,
-        url: supabase.storage.from("uploads").getPublicUrl(`uploads/${f.name}`).data.publicUrl,
+        url: signedUrlData.signedUrl,
         size: f.metadata.size,
-        updated_at: f.updated_at || f.created_at || null
-      }))
-    );
-    const totalUsed = allFiles.reduce((sum, f) => sum + (f.metadata.size || 0), 0) / (1024 * 1024);
-    setUsedSpace(totalUsed);
+        updated_at: f.updated_at || f.created_at || null,
+      };
+    })
+  );
+
+  setFiles(filesWithSignedUrls.filter(f => f !== null));
+
+  const totalUsed = allFiles.reduce((sum, f) => sum + (f.metadata.size || 0), 0) / (1024 * 1024);
+  setUsedSpace(totalUsed);
+};
+
+
+    useEffect(() => { fetchFilesAndUsage(); }, []);
+      const handleUpload = () => fetchFilesAndUsage();
+      const handleDelete = async (idx) => {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user.id;
+
+    const file = files[idx];
+    if (!file) return;
+    const filePath = `${userId}/${file.name}`;
+    await supabase.storage.from("uploads").remove([filePath]);
+    fetchFilesAndUsage();
   };
 
-  useEffect(() => { fetchFilesAndUsage(); }, []);
-
-  const handleUpload = () => fetchFilesAndUsage();
-  const handleDelete = async (idx) => {
-  const file = files[idx];
-  if (!file) return;
-  const filePath = `uploads/${file.name}`;
-  await supabase.storage.from("uploads").remove([filePath]);
-  fetchFilesAndUsage();
-};
   const handleRename = async (idx, newName) => {
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData.user.id;
+
     const file = files[idx];
     if (!file || !newName || file.name === newName) return;
-    const oldPath = `uploads/${file.name}`;
-    const newPath = `uploads/${newName}`;
-    
+
+    const oldPath = `${userId}/${file.name}`;
+    const newPath = `${userId}/${newName}`;
+
     if (files.some(f => f.name === newName)) {
       alert("A file with this name already exists.");
       return;
     }
-   const { error: copyError } = await supabase.storage.from("uploads").copy(oldPath, newPath);
+
+    const { error: copyError } = await supabase.storage.from("uploads").copy(oldPath, newPath);
     if (copyError) {
       alert("Rename failed: " + copyError.message);
       return;
     }
-   await supabase.storage.from("uploads").remove([oldPath]);
+    await supabase.storage.from("uploads").remove([oldPath]);
     fetchFilesAndUsage();
   };
 
