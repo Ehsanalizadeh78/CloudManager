@@ -503,34 +503,37 @@ function MainPage({ user, onLogout }) {
   const [usedSpace, setUsedSpace] = useState(0);
   const totalSpace = 1024;
 
-  const fetchFilesAndUsage = async () => {
+ const fetchFilesAndUsage = async () => {
   const { data: userData } = await supabase.auth.getUser();
   const userId = userData.user.id;
 
-  const { data, error } = await supabase.storage.from("uploads").list(userId, { limit: 1000 });
-  if (error || !data) return;
+  const { data: fileList, error } = await supabase.storage.from("uploads").list(userId, {
+    limit: 1000,
+  });
 
-  const allFiles = data.filter(item => item.metadata && typeof item.metadata.size === "number");
+  if (error || !fileList) return;
 
-  const filesWithSignedUrls = await Promise.all(
-    allFiles.map(async (f) => {
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-        .from("uploads")
-        .createSignedUrl(`${userId}/${f.name}`, 3600);
-      if (signedUrlError) {
-        console.error("Error getting signed URL:", signedUrlError);
-        return null;
-      }
-      return {
-        name: f.name,
-        url: signedUrlData.signedUrl,
-        size: f.metadata.size,
-        updated_at: f.updated_at || f.created_at || null,
-      };
-    })
-  );
+  const allFiles = fileList.filter(item => item.metadata && typeof item.metadata.size === "number");
 
-  setFiles(filesWithSignedUrls.filter(f => f !== null));
+  const filePaths = allFiles.map(f => `${userId}/${f.name}`);
+
+  const { data: signedUrlsData, error: signedUrlsError } = await supabase.storage
+    .from("uploads")
+    .createSignedUrls(filePaths, 3600);
+
+  if (signedUrlsError || !signedUrlsData) {
+    console.error("Error getting signed URLs:", signedUrlsError);
+    return;
+  }
+
+  const filesWithUrls = allFiles.map((file, index) => ({
+    name: file.name,
+    url: signedUrlsData[index]?.signedUrl || "",
+    size: file.metadata.size,
+    updated_at: file.updated_at || file.created_at || null,
+  }));
+
+  setFiles(filesWithUrls);
 
   const totalUsed = allFiles.reduce((sum, f) => sum + (f.metadata.size || 0), 0) / (1024 * 1024);
   setUsedSpace(totalUsed);
