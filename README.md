@@ -1,4 +1,4 @@
-ا
+
 # Cloud Manager
 
 A simple React-based cloud file management app integrated with Supabase for authentication and file storage.
@@ -83,4 +83,4 @@ You can now access the app from your local network at:
 
 This project is licensed under the MIT License.
 
--
+
